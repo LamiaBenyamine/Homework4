@@ -23,7 +23,7 @@ editor: visual
 
 4.  What is a side-effect function?
 
--   A side-effects are pipeable functions that return the original data instead of the transformed data from previou ssteps.
+-   A side-effects are pipeable functions that return the original data instead of the transformed data from previous steps.
 
 5.  Why can you name a variable sd in a function and not cause any issues with the sd function?
 
@@ -36,13 +36,33 @@ editor: visual
 Create a function that takes in a vector of responses and predictions and outputs the Root Mean Square Error (RMSE).
 
 ```{r RMSE function}
-
+getRMSE <- function(response, prediction, ...) {
+  rmse <- sqrt(mean((response - prediction)^2, ...))
+  return(rmse)
+}
 ```
 
 Test RMSE function.
 
 ```{r RMSE test}
+#Use provided random seed generation
+set.seed(10)
+n <- 100
+x <- runif(n)
+resp <- 3 + 10*x + rnorm(n)
+pred <- predict(lm(resp ~ x), data.frame(x))
 
+#Test 1 - default
+getRMSE(resp, pred)
+
+##Replace two response values with missing values
+resp <- replace(resp, 99:100, NA_real_)
+
+#Test 2 - do not specify what to do with NA
+getRMSE(resp, pred)
+
+#Test 3 - specify to remove NA values
+getRMSE(resp, pred, na.rm = TRUE)
 ```
 
 ## MAE
@@ -50,27 +70,101 @@ Test RMSE function.
 Create a function that takes in a vector of responses and predictions and outputs the Mean Absolute Error (MAE).
 
 ```{r MAE function}
-
+getMAE <- function(response, prediction, ...) {
+  mae <- mean(abs(response - prediction), ...)
+  return(mae)
+}
 ```
 
 Test MAE function.
 
 ```{r MAE test}
+#Use provided random seed generation
+set.seed(10)
+n <- 100
+x <- runif(n)
+resp <- 3 + 10*x + rnorm(n)
+pred <- predict(lm(resp ~ x), data.frame(x))
 
+#Test 1 - default
+getMAE(resp,pred)
+
+##Replace two response values with missing values
+resp <- replace(resp, 99:100, NA_real_)
+
+#Test 2 - do not specify what to do with NA
+getMAE(resp, pred)
+
+#Test 3 - specify to remove NA values
+getMAE(resp, pred, na.rm = TRUE)
 ```
 
 ## Wrapper
 
-Create a function that can be used to calculate either or both RSME and MAE with a single call.
+Create a function that can be used to calculate either or both RSME and MAE with a single call. Add conditions if the data is not a numeric atomic vector. Also add condition to check the metric is correct.
 
 ```{r Wrapper function}
-
+getMetric <- function(response, prediction, metric = "both", ...) {
+  if (!is.numeric(response) || !is.vector(response) || !is.atomic(response)) {
+    warning("response argument is not numeric, vector, or atomic: returning NA")
+    return(NA_real_)
+    stop()
+  }
+  if (!is.numeric(prediction) || !is.vector(prediction) || !is.atomic(prediction)) {
+    warning("prediction argument is not numeric, vector, or atomic: returning NA")
+    return(NA_real_)
+    stop()
+  }
+  if (metric == "both") {
+    rmse_value <- getRMSE(response, prediction, ...)
+    mae_value <- getMAE(response, prediction, ...)
+    return(list(rmse_value = rmse_value, mae_value = mae_value)) #use a named list
+  } else if (metric == "mae") {
+    mae_value <- getMAE(response, prediction)
+    return (mae_value = mae_value, ...)
+  } else if (metric == "rmse") {
+    rmse_value <- getRMSE(response, prediction)
+    return (rmse_value = rmse_value, ...)
+  } else {
+    print("please input a valid metric: both, rsme, or mae. returning NA")
+    return(NA_real_)
+    stop()
+  }
+}
 ```
 
 Test Wrapper function.
 
-```{r}
+```{r Wrapper test}
+#Use provided random seed generation
+set.seed(10)
+n <- 100
+x <- runif(n)
+resp <- 3 + 10*x + rnorm(n)
+pred <- predict(lm(resp ~ x), data.frame(x))
 
+#Test 1 - default returns both metrics
+getMetric(resp, pred)
+
+#Test 2 - only return MAE
+getMetric(resp, pred, metric = "mae")
+
+#Test 3 - only return RMSE
+getMetric(resp, pred, metric = "rmse")
+
+#Replace two response values with missing values
+resp <- replace(resp, 99:100, NA_real_)
+
+#Test 4 - do not specify what to do with NA
+getMetric(resp, pred)
+
+#Test 5 - specify to remove NA values
+getMetric(resp, pred, na.rm = TRUE)
+
+#Test 6 - pass incorrect data
+getMetric(letters[1:12], pred) #incorrect vector type
+
+getMetric(resp,pred, na.rm = True, metric = "mean") #incorrect metric type
 ```
 
 # *Task 3:* Querying an API and Tidy-Style Function
