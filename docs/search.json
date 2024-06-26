@@ -1,0 +1,30 @@
+[
+  {
+    "objectID": "Homework4.html",
+    "href": "Homework4.html",
+    "title": "ST558: Homework 4 - Hodge Podge",
+    "section": "",
+    "text": "What is the purpose of the lapply() function? What is the equivalent purrr function?\n\n\nlapply() applies a function to every element of a list. In the purr package, the map() function is the equivalent to lapply().\n\n\nSuppose we have a list called my_list. Each element of the list is a numeric data frame (all columns are numeric). We want use lapply() to run the code cor(numeric_matrix, method = “kendall”) on each element of the list. Write code to do this below! (I’m really trying to ask you how you specify method = “kendall” when calling lapply())\n\n\nlapply(X = my_list, FUN = cor, method = “kendall”)\n\n\nWhat are two advantages of using purrr functions instead of the BaseR apply family?\n\n\nLike most tidyverse functions, purr functions are a more consistent way to apply functions to objects and there are many more helper functions available.\n\n\nWhat is a side-effect function?\n\n\nA side-effects are pipeable functions that return the original data instead of the transformed data from previous steps.\n\n\nWhy can you name a variable sd in a function and not cause any issues with the sd function?\n\n\nR will look up the name depending on the context if it is a call R will look for a function, if it is a name, R will look for an object."
+  },
+  {
+    "objectID": "Homework4.html#rmse",
+    "href": "Homework4.html#rmse",
+    "title": "ST558: Homework 4 - Hodge Podge",
+    "section": "RMSE",
+    "text": "RMSE\nCreate a function that takes in a vector of responses and predictions and outputs the Root Mean Square Error (RMSE).\n\ngetRMSE &lt;- function(response, prediction, ...) {\n  rmse &lt;- sqrt(mean((response - prediction)^2, ...))\n  return(rmse)\n}\n\nTest RMSE function.\n\n#Use provided random seed generation\nset.seed(10)\nn &lt;- 100\nx &lt;- runif(n)\nresp &lt;- 3 + 10*x + rnorm(n)\npred &lt;- predict(lm(resp ~ x), data.frame(x))\n\n#Test 1 - default\ngetRMSE(resp, pred)\n\n[1] 0.9581677\n\n##Replace two response values with missing values\nresp &lt;- replace(resp, 99:100, NA_real_)\n\n#Test 2 - do not specify what to do with NA\ngetRMSE(resp, pred)\n\n[1] NA\n\n#Test 3 - specify to remove NA values\ngetRMSE(resp, pred, na.rm = TRUE)\n\n[1] 0.9605"
+  },
+  {
+    "objectID": "Homework4.html#mae",
+    "href": "Homework4.html#mae",
+    "title": "ST558: Homework 4 - Hodge Podge",
+    "section": "MAE",
+    "text": "MAE\nCreate a function that takes in a vector of responses and predictions and outputs the Mean Absolute Error (MAE).\n\ngetMAE &lt;- function(response, prediction, ...) {\n  mae &lt;- mean(abs(response - prediction), ...)\n  return(mae)\n}\n\nTest MAE function.\n\n#Use provided random seed generation\nset.seed(10)\nn &lt;- 100\nx &lt;- runif(n)\nresp &lt;- 3 + 10*x + rnorm(n)\npred &lt;- predict(lm(resp ~ x), data.frame(x))\n\n#Test 1 - default\ngetMAE(resp,pred)\n\n[1] 0.8155776\n\n##Replace two response values with missing values\nresp &lt;- replace(resp, 99:100, NA_real_)\n\n#Test 2 - do not specify what to do with NA\ngetMAE(resp, pred)\n\n[1] NA\n\n#Test 3 - specify to remove NA values\ngetMAE(resp, pred, na.rm = TRUE)\n\n[1] 0.8181006"
+  },
+  {
+    "objectID": "Homework4.html#wrapper",
+    "href": "Homework4.html#wrapper",
+    "title": "ST558: Homework 4 - Hodge Podge",
+    "section": "Wrapper",
+    "text": "Wrapper\nCreate a function that can be used to calculate either or both RSME and MAE with a single call. Add conditions if the data is not a numeric atomic vector. Also add condition to check the metric is correct.\n\ngetMetric &lt;- function(response, prediction, metric = \"both\", ...) {\n  if (!is.numeric(response) || !is.vector(response) || !is.atomic(response)) {\n    warning(\"response argument is not numeric, vector, or atomic: returning NA\")\n    return(NA_real_)\n    stop()\n  }\n  if (!is.numeric(prediction) || !is.vector(prediction) || !is.atomic(prediction)) {\n    warning(\"prediction argument is not numeric, vector, or atomic: returning NA\")\n    return(NA_real_)\n    stop()\n  }\n  if (metric == \"both\") {\n    rmse_value &lt;- getRMSE(response, prediction, ...)\n    mae_value &lt;- getMAE(response, prediction, ...)\n    return(list(rmse_value = rmse_value, mae_value = mae_value)) #use a named list\n  } else if (metric == \"mae\") {\n    mae_value &lt;- getMAE(response, prediction)\n    return (mae_value = mae_value)\n  } else if (metric == \"rmse\") {\n    rmse_value &lt;- getRMSE(response, prediction)\n    return (rmse_value = rmse_value)\n  } else {\n    print(\"please input a valid metric: both, rsme, or mae. returning NA\")\n    return(NA_real_)\n    stop()\n  }\n}\n\nTest Wrapper function.\n\n#Use provided random seed generation\nset.seed(10)\nn &lt;- 100\nx &lt;- runif(n)\nresp &lt;- 3 + 10*x + rnorm(n)\npred &lt;- predict(lm(resp ~ x), data.frame(x))\n\n#Test 1 - default returns both metrics\ngetMetric(resp, pred)\n\n$rmse_value\n[1] 0.9581677\n\n$mae_value\n[1] 0.8155776\n\n#Test 2 - only return MAE\ngetMetric(resp, pred, metric = \"mae\")\n\n[1] 0.8155776\n\n#Test 3 - only return RMSE\ngetMetric(resp, pred, metric = \"rmse\")\n\n[1] 0.9581677\n\n#Replace two response values with missing values\nresp &lt;- replace(resp, 99:100, NA_real_)\n\n#Test 4 - do not specify what to do with NA\ngetMetric(resp, pred)\n\n$rmse_value\n[1] NA\n\n$mae_value\n[1] NA\n\n#Test 5 - specify to remove NA values\ngetMetric(resp, pred, na.rm = TRUE)\n\n$rmse_value\n[1] 0.9605\n\n$mae_value\n[1] 0.8181006\n\n#Test 6 - pass incorrect data\ngetMetric(letters[1:12], pred) #incorrect vector type\n\nWarning in getMetric(letters[1:12], pred): response argument is not numeric,\nvector, or atomic: returning NA\n\n\n[1] NA\n\ngetMetric(resp,pred, na.rm = True, metric = \"mean\") #incorrect metric type\n\n[1] \"please input a valid metric: both, rsme, or mae. returning NA\"\n\n\n[1] NA"
+  }
+]

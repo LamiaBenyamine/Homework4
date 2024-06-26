@@ -103,7 +103,7 @@ getMAE(resp, pred, na.rm = TRUE)
 
 Create a function that can be used to calculate either or both RSME and MAE with a single call. Add conditions if the data is not a numeric atomic vector. Also add condition to check the metric is correct.
 
-```{r Wrapper function}
+```{r Wrapper function, warning = TRUE, error=TRUE}
 getMetric <- function(response, prediction, metric = "both", ...) {
   if (!is.numeric(response) || !is.vector(response) || !is.atomic(response)) {
     warning("response argument is not numeric, vector, or atomic: returning NA")
@@ -121,10 +121,10 @@ getMetric <- function(response, prediction, metric = "both", ...) {
     return(list(rmse_value = rmse_value, mae_value = mae_value)) #use a named list
   } else if (metric == "mae") {
     mae_value <- getMAE(response, prediction)
-    return (mae_value = mae_value, ...)
+    return (mae_value = mae_value)
   } else if (metric == "rmse") {
     rmse_value <- getRMSE(response, prediction)
-    return (rmse_value = rmse_value, ...)
+    return (rmse_value = rmse_value)
   } else {
     print("please input a valid metric: both, rsme, or mae. returning NA")
     return(NA_real_)
@@ -174,20 +174,37 @@ Connect to the news api and select a topic of choice.
 ```{r connect api}
 library(jsonlite)
 library(dplyr)
-url_id <- "https://newsapi.org/v2/everything?q=tesla&from=2024-05-25&sortBy=publishedAt&apiKey=6c4722dace224f01b1762cd4b8cd2165"
-id_info <- httr::GET(url_id)
+library(httr)
+library(tidyverse)
 
-str(id_info,max.level = 1)
+url_id <- "https://newsapi.org/v2/everything?q=tesla&from=2024-05-26&sortBy=publishedAt&apiKey=6c4722dace224f01b1762cd4b8cd2165"
+id_info <- httr::GET(url_id) 
 
 parsed <- fromJSON(rawToChar(id_info$content))
-info <- as_tibble(parsed$articles) |>
-  collect() |>
- filter(title == "Mycocycle uses mushrooms to upcycle old tires and construction waste | TechCrunch")
-info
+article_tb <- as_tibble(parsed$articles) |>
+ filter(title == "A comprehensive list of 2024 tech layoffs")
+  article_tb
 ```
 
-Write a function that allows a user to query this API and select the news title and date range
+Write a function that allows a user to query this API and select the news title and start date range.
 
 ```{r api function}
+getNews <- function(q, from_d, api_key) {
+ url_id <- paste("https://newsapi.org/v2/everything?q=tesla&from=",from_d, "&to=", {{Sys.Date()}},"&apiKey=", api_key, sep = "")
+ id_info <- httr::GET(url_id)
+ parsed <- fromJSON(rawToChar(id_info$content))
+ article_tb <- as_tibble(parsed$articles) |>
+  filter(title == q)
+  return(article_tb)
+}
+```
 
+Test the function using different titles and dates.
+
+```{r api function test}
+#Test 1
+getNews(q = "Tesla investor accuses Elon Musk of insider trading that banked him $7.5 billion", from_d = "2024-05-26", api_key = "6c4722dace224f01b1762cd4b8cd2165")
+
+#Test 2
+getNews(q = "Tesla recalls over 11,000 Cybertrucks due to wiper issue", from_d = "2024-06-20", api_key = "6c4722dace224f01b1762cd4b8cd2165")
 ```
